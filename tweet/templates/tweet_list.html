@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - SocialSphere{% endblock %}
+
+{% block content %}
+<style>
+    .sidebar {
+        background-color: #1f1f2e;
+        border-radius: 12px;
+        padding: 1rem;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .main-feed {
+        min-height: 100vh;
+    }
+
+    .tweet-card {
+        background-color: #252534;
+        border-radius: 20px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        overflow: hidden;
+        transition: 0.3s;
+        margin-bottom: 1.5rem;
+    }
+
+    .tweet-card:hover {
+        transform: scale(1.01);
+    }
+
+    .tweet-avatar {
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        object-fit: cover;
+        margin-right: 0.8rem;
+    }
+
+    .tone.toxic { background-color: #d9534f; }
+    .tone.non-toxic { background-color: #5cb85c; }
+    .tone.neutral { background-color: #6c757d; }
+
+    .comment-toggle {
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #999;
+    }
+    .tweet-image {
+    width: 100%;
+    height: 300px; /* fixed height for consistency */
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    border-bottom: 1px solid #444;
+}
+
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <!-- Left Sidebar -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sidebar">
+                <div class="text-center mb-3">
+                    <img src="https://ui-avatars.com/api/?name={{ user.username }}" class="tweet-avatar mb-2" alt="avatar">
+                    <h5>{{ user.username }}</h5>
+                </div>
+                <ul class="list-unstyled">
+                    <li>📈 Analytics (Coming soon)</li>
+                    <li>⚙️ Settings</li>
+                    <li>🚪 Log Out</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Center Feed -->
+        <div class="col-lg-6 main-feed">
+            <div class="text-center mb-4">
+                <a class="btn btn-light btn-lg px-4" href="{% url 'tweet_create' %}">➕ Post</a>
+            </div>
+
+            {% for tweet in tweets %}
+            <div class="tweet-card">
+                {% if tweet.photo %}
+                <img src="{{ tweet.photo.url }}" class="tweet-image" alt="tweet photo">
+                {% endif %}
+
+                <div class="tweet-header p-3 d-flex justify-content-between align-items-center bg-dark">
+                    <div class="d-flex align-items-center">
+                        <img src="https://ui-avatars.com/api/?name={{ tweet.user.username }}" class="tweet-avatar" alt="avatar">
+                        <div>
+                            <div class="fw-bold">{{ tweet.user.username }}</div>
+                            <small class="text-muted">{{ tweet.created_at|timesince }} ago</small>
+                        </div>
+                    </div>
+                    <span class="tone badge {% if tweet.tone == 'toxic' %}toxic{% elif tweet.tone == 'non-toxic' %}non-toxic{% else %}neutral{% endif %}">
+                        {{ tweet.tone|capfirst }}
+                    </span>
+                </div>
+
+                <div class="tweet-content p-3">
+                    <p>{{ tweet.text }}</p>
+                </div>
+
+                <div class="tweet-actions d-flex justify-content-between p-3 bg-secondary">
+                    <div>
+                        <form method="post" action="{% url 'like_tweet' tweet.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-outline-light btn-sm">❤️ {{ tweet.like_count }}</button>
+                        </form>
+                        <span class="ms-2 comment-toggle" onclick="toggleCommentBox('{{ tweet.id }}')">💬 {{ tweet.comments.count }}</span>
+                    </div>
+                    {% if tweet.user == user %}
+                    <div>
+                        <a href="{% url 'tweet_edit' tweet.id %}" class="btn btn-outline-info btn-sm">Edit</a>
+                        <a href="{% url 'tweet_delete' tweet.id %}" class="btn btn-outline-danger btn-sm">Delete</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div id="comment-box-{{ tweet.id }}" class="comment-box p-3 bg-dark text-light" style="display: none;">
+                    <ul class="list-unstyled mb-2">
+                        {% for comment in tweet.comments.all %}
+                        <li><strong>{{ comment.user.username }}</strong>: {{ comment.text }}</li>
+                        {% empty %}
+                        <li class="text-muted">No comments yet.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if user.is_authenticated %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="tweet_id" value="{{ tweet.id }}">
+                        <textarea name="comment" class="form-control mb-2" placeholder="Write a comment..." rows="2" required></textarea>
+                        <button class="btn btn-success btn-sm">Post</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sidebar">
+                <h5>Sponsored</h5>
+                <p>Ad content or trending articles will appear here.</p>
+                <hr>
+                <p>Follow us on SocialSphere 🚀</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleCommentBox(id) {
+        const box = document.getElementById('comment-box-' + id);
+        box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    }
+</script>
+{% endblock %}

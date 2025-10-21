@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Sasta Tweet
+{% endblock %}
+
+{% block content %}
+<h1 class="text-center mt-4">Welcome to Djano's Project</h1>
+
+<h2>
+{% if form.instance.pk %}
+    Tweet
+{% else %}
+ Tweet
+{% endif %}
+
+<form class="form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+{{form.as_p}}
+<button class="btn btn-warning" type="submit">Submit</button>
+</form>
+<a href="{% url "tweet_list" %}">Back to Tweets</a>
+    </h2>
+{% endblock %}
